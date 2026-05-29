@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OrderOps AI - B2B Delivery Orchestration</title>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- HEADER -->
+      <header>
+        <div class="brand-section">
+          <span class="logo-badge">🍔 OrderOps.AI</span>
+          <div class="status-indicator">
+            <span id="gateway-status-dot" class="status-dot"></span>
+            <span id="gateway-status-text">DISCONNECTED</span>
+          </div>
+        </div>
+        
+        <div class="control-bar">
+          <div class="speed-control">
+            <label for="simulation-speed">Speed:</label>
+            <select id="simulation-speed">
+              <option value="1.0" selected>1.0x (Normal)</option>
+              <option value="2.0">2.0x (Fast)</option>
+              <option value="4.0">4.0x (Turbo)</option>
+              <option value="0.5">0.5x (Slow)</option>
+            </select>
+          </div>
+          <button id="btn-mock-feed" class="btn btn-primary">⚡ Ingest Random Order</button>
+          <button id="btn-reset" class="btn btn-danger">🗑️ Reset Demo</button>
+        </div>
+      </header>
+
+      <!-- STATS BAR -->
+      <div class="stats-container">
+        <div class="stat-box">
+          <div id="stat-active-orders" class="stat-val">0</div>
+          <div class="stat-lbl">Active Orders</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-completed-orders" class="stat-val">0</div>
+          <div class="stat-lbl">Completed Today</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-drivers-active" class="stat-val">0 / 3</div>
+          <div class="stat-lbl">Drivers Online</div>
+        </div>
+        <div class="stat-box">
+          <div id="stat-ai-efficiency" class="stat-val">0s</div>
+          <div class="stat-lbl">Avg. Triage Speed</div>
+        </div>
+      </div>
+
+      <!-- MAIN DASHBOARD SPLIT GRID -->
+      <div class="dashboard-grid">
+        
+        <!-- LEFT COLUMN: BOARD & INPUT -->
+        <div class="main-column">
+          
+          <!-- KANBAN BOARD -->
+          <div class="kanban-board">
+            <!-- COLUMN 1: INCOMING -->
+            <div class="kanban-column" id="col-pending">
+              <div class="column-header">
+                <span class="column-name">📥 Ingesting & Triage</span>
+                <span class="column-count" id="count-pending">0</span>
+              </div>
+              <div class="kanban-cards-container" id="cards-pending"></div>
+            </div>
+
+            <!-- COLUMN 2: COOKING -->
+            <div class="kanban-column" id="col-cooking">
+              <div class="column-header">
+                <span class="column-name">🍳 Kitchen Prep</span>
+                <span class="column-count" id="count-cooking">0</span>
+              </div>
+              <div class="kanban-cards-container" id="cards-cooking"></div>
+            </div>
+
+            <!-- COLUMN 3: OUT FOR DELIVERY -->
+            <div class="kanban-column" id="col-delivering">
+              <div class="column-header">
+                <span class="column-name">🛵 In Transit</span>
+                <span class="column-count" id="count-delivering">0</span>
+              </div>
+              <div class="kanban-cards-container" id="cards-delivering"></div>
+            </div>
+
+            <!-- COLUMN 4: COMPLETED -->
+            <div class="kanban-column" id="col-delivered">
+              <div class="column-header">
+                <span class="column-name">✅ Delivered</span>
+                <span class="column-count" id="count-delivered">0</span>
+              </div>
+              <div class="kanban-cards-container" id="cards-delivered"></div>
+            </div>
+          </div>
+
+          <!-- MANUAL INPUT -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">📝 Manual Order Ingestion Sandbox</div>
+            </div>
+            <div class="panel-body">
+              <form id="ingest-form" class="raw-input-form">
+                <div class="form-row">
+                  <select id="ingest-platform" style="flex-grow: 1;">
+                    <option value="iFood">iFood</option>
+                    <option value="Rappi">Rappi</option>
+                    <option value="Uber Eats">Uber Eats</option>
+                  </select>
+                  <button type="submit" class="btn btn-success" style="flex-grow: 2;">🚀 Dispatch to AI Triage</button>
+                </div>
+                <textarea id="ingest-raw-text" class="raw-textarea" placeholder="Paste raw delivery text, customer chat, or webhook JSON here...
+Example:
+Cliente: Mariana L.
+2x Burger Duplo Gourmet
+1x Batata Rústica sem sal
+Mandar refrigerante gelado. Rua Bela Cintra, 450 ap 22. Urgente!"></textarea>
+              </form>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: TERMINAL & RADAR -->
+        <div class="main-column">
+          
+          <!-- AGENT CONSOLE -->
+          <div class="panel" style="flex-grow: 1; display: flex; flex-direction: column;">
+            <div class="panel-header">
+              <div class="panel-title">🤖 Live Agent Thought Stream</div>
+              <div class="terminal-header-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+            </div>
+            <div class="terminal-window">
+              <div class="terminal-body" id="agent-console">
+                <div class="log-entry">
+                  <span class="log-timestamp">00:00:00</span>
+                  <span class="log-agent system">System</span>
+                  <span class="log-text">Initializing connection to OrderOps AI Backend...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LIVE DISPATCH RADAR MAP -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">🗺️ Real-time Dispatch GPS Radar</div>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+              <div class="map-container">
+                <canvas id="radar-canvas" class="live-map-canvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- DRIVER ROSTER -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">🚲 Delivery Fleet Status</div>
+            </div>
+            <div class="panel-body">
+              <div id="drivers-roster" class="drivers-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
