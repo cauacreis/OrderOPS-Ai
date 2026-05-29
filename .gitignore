@@ -1,6 +1,7 @@
 # Java Build Target
 backend/target/
 backend/*.iml
+backend/data/
 
 # Node / Frontend Dependencies
 frontend/node_modules/

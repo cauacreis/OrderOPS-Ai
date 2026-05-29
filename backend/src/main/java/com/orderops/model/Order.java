@@ -1,13 +1,21 @@
 package com.orderops.model;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "orders")
 public class Order {
+    @Id
     private String id;
     private String customerName;
     private String address;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "order_items", joinColumns = @JoinColumn(name = "order_id"))
     private List<OrderItem> items = new ArrayList<>();
+
     private double totalPrice;
     private String platform; // iFood, Rappi, Uber Eats
     private String status;   // PENDING, TRIAGED, COOKING, READY, DELIVERING, DELIVERED
@@ -16,6 +24,8 @@ public class Order {
     private long createdAt;
     private int prepTimeMinutes;
     private String driverId;
+
+    @Column(length = 2000)
     private String rawText;
 
     public Order() {
@@ -24,6 +34,7 @@ public class Order {
         this.priority = "MEDIUM";
     }
 
+    @Embeddable
     public static class OrderItem {
         private String name;
         private int quantity;

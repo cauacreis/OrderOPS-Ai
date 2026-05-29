@@ -1,6 +1,14 @@
 package com.orderops.model;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "agent_logs")
 public class AgentLog {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private long timestamp;
     private String agentName;
     private String level; // INFO, THINKING, SUCCESS, WARNING
@@ -34,4 +42,7 @@ public class AgentLog {
 
     public String getOrderId() { return orderId; }
     public void setOrderId(String orderId) { this.orderId = orderId; }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 }
