@@ -50,11 +50,6 @@ public class OrderController {
         return driverService.getAllDrivers();
     }
 
-    @GetMapping("/logs")
-    public List<AgentLog> getLogs() {
-        return orderService.getAllLogs();
-    }
-
     @PostMapping("/orders/ingest")
     public ResponseEntity<Map<String, String>> ingestOrder(@RequestBody Map<String, String> payload) {
         String rawText = payload.get("rawText");

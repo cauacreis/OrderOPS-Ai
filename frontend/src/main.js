@@ -28,6 +28,7 @@ const ingestPlatform = document.getElementById('ingest-platform');
 const agentConsole = document.getElementById('agent-console');
 const driversRoster = document.getElementById('drivers-roster');
 const radarCanvas = document.getElementById('radar-canvas');
+const xaiConsole = document.getElementById('xai-console');
 
 // Stat Elements
 const statActiveOrders = document.getElementById('stat-active-orders');
@@ -41,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initWebSocket();
   fetchInitialState();
   initRadarAnimation();
+  startXAILogPolling();
 });
 
 // Event Listeners
@@ -111,7 +113,10 @@ async function fetchInitialState() {
     if (driversRes.ok) drivers = await driversRes.json();
 
     const logsRes = await fetch(`${API_BASE}/logs`);
-    if (logsRes.ok) logs = await logsRes.json();
+    if (logsRes.ok) {
+      const fetchedLogs = await logsRes.json();
+      logs = fetchedLogs.reverse(); // Reverse descending order to chronological ascending
+    }
 
     renderOrders();
     renderDrivers();
@@ -500,7 +505,7 @@ function initRadarAnimation() {
     orders.forEach(order => {
       if (order.status === 'DELIVERING' || order.status === 'READY' || order.status === 'COOKING') {
         // Derive static pseudo-coordinates for order destination based on its ID so it matches the driver's path
-        const idNum = parseInt(order.id.replace(/\D/g, '')) || 100;
+        const idNum = parseInt((order.id || '').replace(/\D/g, '')) || 100;
         
         // Deterministic offset based on order id
         const offsetLat = ((idNum * 17) % 100 - 50) / 7500.0;
@@ -571,3 +576,57 @@ function initRadarAnimation() {
   // Start animation loop
   requestAnimationFrame(drawRadar);
 }
+
+// Explainable AI (XAI) Polling & Rendering
+function startXAILogPolling() {
+  fetchXAILogs();
+  setInterval(fetchXAILogs, 3000);
+}
+
+async function fetchXAILogs() {
+  try {
+    const res = await fetch(`${API_BASE}/logs`);
+    if (res.ok) {
+      const xaiLogs = await res.json();
+      renderXAILogs(xaiLogs);
+    }
+  } catch (err) {
+    console.error('Error fetching XAI logs:', err);
+  }
+}
+
+function renderXAILogs(xaiLogs) {
+  if (!xaiConsole) return;
+  xaiConsole.innerHTML = '';
+  
+  if (!xaiLogs || xaiLogs.length === 0) {
+    xaiConsole.innerHTML = '<div class="xai-log-entry" style="color: var(--text-muted)">Sem registros no log de auditoria.</div>';
+    return;
+  }
+
+  // Reverse to show oldest at the top and newest at the bottom
+  // Since endpoint is sorted by date desc, reversing it shows them chronologically.
+  const chronologicalLogs = [...xaiLogs].reverse();
+
+  chronologicalLogs.forEach(log => {
+    const entry = document.createElement('div');
+    entry.className = 'xai-log-entry';
+
+    const timeStr = new Date(log.timestamp).toLocaleTimeString();
+    const agent = log.agentName || 'System';
+    const levelClass = log.level ? log.level.toLowerCase() : 'info';
+    
+    entry.innerHTML = `
+      <span class="xai-log-time">[${timeStr}]</span>
+      <span class="xai-log-agent">[${agent}]</span>
+      <span class="xai-log-level ${levelClass}">[${log.level || 'INFO'}]</span>: 
+      <span class="xai-log-msg">${log.message}</span>
+    `;
+
+    xaiConsole.appendChild(entry);
+  });
+
+  // Auto-scroll to bottom of the terminal
+  xaiConsole.scrollTop = xaiConsole.scrollHeight;
+}
+

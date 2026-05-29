@@ -49,7 +49,9 @@ public class OrderWebSocketHandler extends TextWebSocketHandler {
             for (WebSocketSession session : sessions) {
                 if (session.isOpen()) {
                     try {
-                        session.sendMessage(message);
+                        synchronized (session) {
+                            session.sendMessage(message);
+                        }
                     } catch (IOException e) {
                         System.err.println("Failed to send message to session: " + session.getId() + " - " + e.getMessage());
                     }

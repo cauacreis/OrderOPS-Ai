@@ -98,6 +98,42 @@ O frontend iniciará na porta **5173** ([http://localhost:5173](http://localhost
 
 ---
 
+## ⚠️ Limitações do Simulador (Known Issues)
+
+O simulador de inteligência artificial (**Mock AI**) presente no backend foi desenvolvido utilizando heurísticas de expressões regulares (RegEx) rápidas e sem estado para parsing de texto não-estruturado. Esta abordagem gera as seguintes limitações técnicas:
+
+1. **Falso Positivo na Extração de Itens (`order_items`):** O parser de itens tenta mapear padrões de quantidade e nome do produto utilizando uma RegEx genérica `(\\d+)\\s*(?:x|\\*|-)?\\s*([a-zA-Záéíóúâêôãõç\\s]{3,25})`. Isso faz com que partes do endereço ou instruções (ex: *"2300 bloco B ap"*, *"1000 - Recepção"*, *"450 apto"*) sejam erroneamente classificados como itens de pedido com quantidades gigantescas baseadas no número do endereço (ex: `2300` de quantidade de "bloco B ap" e `1000` de "Recepção").
+2. **Inflação do Preço Total do Pedido:** Como consequência do falso positivo acima, o valor total do pedido (`totalPrice`) é calculado multiplicando essas quantidades absurdas por preços simulados aleatórios, resultando em totais irrealistas nas ordens afetadas (como `R$ 96.664,00`).
+
+**Prontidão de Arquitetura:** A arquitetura do `AgentOrchestrator` está 100% preparada para solucionar essas anomalias. Há uma ramificação nativa no orquestrador pronta para utilizar a API real do **Google Gemini (LLM)** assim que a chave `GEMINI_API_KEY` for configurada no arquivo `.env` da raiz. Com a API da Gemini ativada, a estruturação do payload deixa de depender de RegEx estático e passa a rodar via modelos de linguagem de última geração, mapeando os campos com precisão cirúrgica.
+
+---
+
+## 🔍 Relatório de QA Autônomo
+
+Realizamos uma varredura operacional e técnica no projeto OrderOps AI e identificamos as seguintes anomalias operacionais, de design e concorrência:
+
+### 1. Concorrência no Canal do WebSocket (Thread Safety)
+* **Impacto:** Alto (Riscos de concorrência e perdas de mensagens operacionais).
+* **Descrição:** O método `broadcast` no `OrderWebSocketHandler.java` envia atualizações simultâneas para o mesmo canal de WebSocket usando threads assíncronas do `ExecutorService`. Como a chamada `session.sendMessage()` não é inerentemente thread-safe no Spring WebSocket (Tomcat), ocorria a exceção `java.lang.IllegalStateException: The remote endpoint was in state [TEXT_PARTIAL_WRITING]`.
+* **Resolução Aplicada:** Implementado bloco `synchronized(session)` no envio da mensagem para garantir atomicidade de cada broadcast.
+
+### 2. Tratamento Incorreto de Endereços sem Dois-Pontos (`:`)
+* **Impacto:** Médio (Erros de dados operacionais).
+* **Descrição:** A RegEx de mapeamento de endereço `(?i)(?:endereço|entrega|rua|av|avenida)\\s*:\\s*([^\\n]+)` assume obrigatoriamente a presença de dois-pontos. Em mensagens comuns como *"Entrega na Rua da Consolação, 2300..."* (que não contêm `:`), a regex falha e o sistema define o endereço como `"Retirada no Balcão"`, ocultando o endereço real do cliente e impactando o Radar GPS.
+
+### 3. TypeError no Loop de Radar GPS
+* **Impacto:** Alto (Quebra visual total do Canvas de Radar).
+* **Descrição:** No arquivo `main.js`, o radar animado lia `order.id.replace(/\\D/g, '')`. Caso a ordem estivesse em processo de ingestão (`PENDING`) e o ID ainda fosse nulo/indefinido, ocorria um erro crítico de `TypeError: Cannot read properties of null`, o que congelava o loop `requestAnimationFrame` da renderização do mapa.
+* **Resolução Aplicada:** Correção no frontend com fallback seguro `(order.id || '').replace(...)`.
+
+### 4. Ordem Cronológica Invertida no Console Stream
+* **Impacto:** Baixo/Médio (Usabilidade operacional).
+* **Descrição:** Após alterarmos o backend para retornar logs ordenados por data decrescente (mais recentes primeiro), a inicialização do frontend renderizava os logs históricos de cabeça para baixo no console central. Além disso, as novas atualizações do WebSocket eram injetadas no final, gerando descontinuidade no console.
+* **Resolução Aplicada:** Ajuste no `fetchInitialState` aplicando um `.reverse()` no array de logs do REST para manter toda a linha do tempo estritamente cronológica, do mais antigo para o mais recente com rolagem automática para o final.
+
+---
+
 ## 🔒 Segurança e Boas Práticas
 * Separação de responsabilidades e camadas isoladas de execução (Controller -> Service -> Model -> WebSockets).
 * Prevenção de versionamento de dependências e arquivos de build no repositório Git através do `.gitignore` configurado.
