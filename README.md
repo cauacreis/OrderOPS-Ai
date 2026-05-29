@@ -132,7 +132,39 @@ Realizamos uma varredura operacional e técnica no projeto OrderOps AI e identif
 * **Descrição:** Após alterarmos o backend para retornar logs ordenados por data decrescente (mais recentes primeiro), a inicialização do frontend renderizava os logs históricos de cabeça para baixo no console central. Além disso, as novas atualizações do WebSocket eram injetadas no final, gerando descontinuidade no console.
 * **Resolução Aplicada:** Ajuste no `fetchInitialState` aplicando um `.reverse()` no array de logs do REST para manter toda a linha do tempo estritamente cronológica, do mais antigo para o mais recente com rolagem automática para o final.
 
+
 ---
+
+## 📍 Status Atual e Próximos Passos (Roadmap)
+
+Este checkpoint de desenvolvimento resume o estado atual da solução e as prioridades técnicas mapeadas para a próxima fase do OrderOps AI.
+
+### 1. Onde Paramos (Congelamento da Fase 1)
+A infraestrutura base do MVP está **100% concluída e operacional**:
+* **Backend Spring Boot:** Implementado com arquitetura limpa, persistência de dados em memória/arquivo utilizando H2 Database e JPA, e endpoints RESTful expostos de forma síncrona.
+* **WebSockets Gateway:** Configurado e implementado com total segurança contra condições de corrida (Thread Safety sincronizada nas sessões de envio de mensagens concorrentes de agentes).
+* **Frontend Neo-Brutalista:** Dashboard operacional reativo desenvolvido com CSS customizado, canvas 2D dinâmico para radar GPS e terminal interativo de auditoria de agentes de IA (**Explainable AI - XAI**) alimentado por polling síncrono de logs decrescentes.
+* **Limitação Atual:** O sistema opera em modo isolado (*Stand-alone*) utilizando o simulador interno **Mock AI** baseado em regras regex, gerando anomalias na extração de itens e inflação de preços em virtude da ausência de inteligência semântica com parsing contextual.
+
+### 2. Próximo Passo 1: O Despertar da IA (Integração LLM)
+* **Ação:** Configuração da variável `GEMINI_API_KEY` no arquivo `.env` na raiz do workspace.
+* **Refatoração:** Modificar o comportamento do `AgentOrchestrator.java` para desativar as heurísticas estáticas do `parseWithMockRules` e habilitar a chamada externa ativa ao modelo `gemini-1.5-flash` por meio de chamadas HTTP nativas.
+* **Objetivo:** Implementar a diretiva de **Structured Outputs (JSON Schema)** nas chamadas de LLM para forçar o retorno estrito de objetos JSON tipados. Isto eliminará falsos positivos do RegEx, garantindo a separação exata entre itens do pedido (comida) e descrições/observações de endereço (portaria, blocos, etc.).
+
+### 3. Próximo Passo 2: Testes de Estresse Semântico
+* **Ação:** Injeção sistemática de cenários não-estruturados complexos por meio do painel *Manual Ingestion Sandbox*.
+* **Objetivo:** Submeter a IA do Gemini a payloads de entrada simulando conversas humanas desordenadas, uso de jargão de motoboy, gírias locais e múltiplos itens descritos sem formatação matemática. O objetivo é testar a robustez de inferência semântica e a capacidade do modelo de classificar corretamente a prioridade (`HIGH`/`CRITICAL`) do pedido com base no contexto (detecção de reclamações, atrasos prévios ou alergias descritas de forma implícita).
+
+### 4. Próximo Passo 3: Evolução de Interface (React Migration)
+* **Ação:** Migração estrutural do frontend de Vanilla JS + CSS nativo para uma SPA moderna utilizando **React.js** empacotado no Vite.
+* **Objetivo:** Componentizar a árvore DOM do painel operacional, separando em componentes isolados:
+  * O painel de Radar GPS (abstraindo o Canvas em hooks de animação).
+  * O grid do Kanban Board (facilitando transições de estado de pedidos).
+  * O terminal de Auditoria XAI (isolando o estado de polling síncrono de logs).
+  Isso preparará a arquitetura de front-end para escalabilidade horizontal e cobertura completa de testes unitários baseados em componentes.
+
+---
+
 
 ## 🔒 Segurança e Boas Práticas
 * Separação de responsabilidades e camadas isoladas de execução (Controller -> Service -> Model -> WebSockets).
