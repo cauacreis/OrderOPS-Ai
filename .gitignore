@@ -1,0 +1,21 @@
+# Java Build Target
+backend/target/
+backend/*.iml
+
+# Node / Frontend Dependencies
+frontend/node_modules/
+frontend/dist/
+
+# Local Environment Variables
+.env
+
+# IDE / System files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.DS_Store
+Thumbs.db
