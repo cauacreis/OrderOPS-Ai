@@ -179,7 +179,7 @@ function handleWebSocketMessage(payload) {
       appendAgentLog(data);
       break;
     case 'SYSTEM':
-      addSystemLog(data.message || data, 'info');
+      addSystemLog(payload.message || (data ? (data.message || data) : 'System message'), 'info');
       break;
     default:
       console.warn('Unhandled message type:', type, data);
