@@ -13,6 +13,15 @@ Restaurantes perdem eficiência e dinheiro operando múltiplas telas (diferentes
 
 ---
 
+## 🛠️ Natureza do Projeto (Stand-alone PoC)
+Este projeto está em fase de ideação e foi construído com a filosofia **"Zero-Friction"** para avaliação técnica. 
+Para facilitar testes e demonstrações em entrevistas, o sistema roda de forma 100% isolada (Stand-alone):
+* **Sem dependência externa:** Não exige conexão com APIs reais do iFood/Rappi. O frontend simula a injeção de dados via `POST`.
+* **Motor de IA Mockado:** As heurísticas de decisão (Triage e Dispatch) rodam via simulação interna no backend, sem exigir chaves de API pagas (LLM) neste estágio inicial.
+* **Banco de Dados Nativo (In-Memory):** Utiliza persistência em memória para que o avaliador possa baixar, rodar e ver o sistema funcionando em tempo real instantaneamente, sem a necessidade de configurar Docker ou bancos de dados relacionais.
+
+---
+
 ## 🧠 Arquitetura e Stack Tecnológico
 Este projeto foca em alta concorrência, baixa latência e design patterns corporativos:
 
